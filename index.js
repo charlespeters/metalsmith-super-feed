@@ -28,10 +28,7 @@ module.exports = (options = {}) => {
     const error = validate(metadata, settings)
     if (error) return done(new Error(error))
 
-    const collection = metadata.collections[settings.collection].slice(
-      0,
-      settings.limit
-    )
+    const allCollections = Object.keys(metadata.collections)
 
     let feed = {
       version: 'https://jsonfeed.org/version/1',
@@ -52,22 +49,19 @@ module.exports = (options = {}) => {
 
     Object.assign(feed, settings.json)
 
-    collection.forEach(file => {
-      feed.items.push({
-        id: file.slug,
-        slug: file.slug,
-        url:
-          metadata.site && metadata.site.url
-            ? `${metadata.site.url}${file.path}`
-            : undefined,
-        title: file.title,
-        contents: file.contents.toString('utf8'),
-        date: file.date
+    allCollections.map(collection => metadata.collections[collection].forEach(file => {
+        feed.items.push({
+          id: file.slug,
+          title: file.title,
+          date: file.date,
+          permalink: file.permalink,
+          contents: file.contents.toString('utf8')
+        })
       })
-    })
+    )
 
     files[settings.destination] = {
-      contents: Buffer.from(JSON.stringify(feed), 'utf8')
+      contents: Buffer.from(JSON.stringify(feed, null, '\t'), 'utf8')
     }
 
     done()
